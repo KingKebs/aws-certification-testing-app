@@ -1,19 +1,42 @@
 {
   "compilerOptions": {
+    // JavaScript target version
     "target": "es6",
+    
+    // Module system
     "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    
+    // Output configuration
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./",
+    
+    // Type checking
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    
+    // Module interop
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    
+    // Additional safety checks
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    
+    // Source maps for debugging
+    "sourceMap": true,
+    
+    // DOM for client-side TypeScript
+    "lib": ["es6", "dom"]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",    // Server-side code
+    "views/**/*"   // Client-side code
   ],
   "exclude": [
     "node_modules",
+    "dist",
     "**/*.spec.ts"
   ]
 }

@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultContainer = document.getElementById('result-container');
 
     // Initialize variables
-    let selectedOption = null;
+    let selectedOption: number | null = null;
     let currentQuestionIndex = 0;
     let correctAnswersCount = 0;
     const totalQuestions = 65; // Adjust this as needed
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display the options
         if (optionsContainer) {
             optionsContainer.innerHTML = '';
-            question.options.forEach((option, index) => {
+            question.options.forEach((option: string, index: number) => {
                 const optionElement = document.createElement('div');
                 optionElement.className = 'option';
                 optionElement.textContent = option;
