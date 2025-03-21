@@ -1,3 +1,12 @@
+/* 
+    This hook is used to fetch questions from the API. 
+    It uses the `fetch` API to make a GET request to the `/api/questions` endpoint. 
+    The hook returns an object with three properties: 
+    - `questions` is an array of Question objects, 
+    - `loading` is a boolean that indicates whether the request is still pending, 
+    - `error` is a string that contains an error message if the request fails.
+*/
+
 import { useState, useEffect } from 'react';
 import { Question } from '../types/question';
 

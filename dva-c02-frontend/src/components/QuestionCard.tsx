@@ -1,3 +1,12 @@
+/* 
+    This component is responsible for rendering a single question card.
+    It takes the following props:
+    - question: An object containing the question text and options.
+    - currentIndex: The index of the current question.
+    - onAnswerSelect: A function that is called when an answer is selected.
+    - selectedAnswer: The index of the selected answer.
+*/
+
 import React from 'react';
 import { Question } from '../types/question';
 

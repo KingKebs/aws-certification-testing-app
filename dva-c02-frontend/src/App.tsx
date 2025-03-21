@@ -1,3 +1,7 @@
+/*
+  * App.tsx
+  * Description: Main application
+*/
 import React, { useState } from 'react';
 import { QuestionCard } from './components/QuestionCard';
 import { Navigation } from './components/Navigation';
