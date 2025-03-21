@@ -4,8 +4,7 @@ import QuestionController from '../controllers/questionController';
 const router = Router();
 const questionController = new QuestionController();
 
-export function setRoutes(app) {
-    app.use('/api/questions', router);
-    router.get('/', questionController.getQuestions.bind(questionController));
-    router.post('/check-answer', questionController.checkAnswer.bind(questionController));
-}
+router.get('/', (req, res) => questionController.getQuestions(req, res));
+router.post('/check', (req, res) => questionController.checkAnswer(req, res));
+
+export default router;

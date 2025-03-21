@@ -1,15 +1,15 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import { setRoutes } from './routes/questionRoutes';
+import cors from 'cors';
+import questionRoutes from './routes/questionRoutes';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/api/questions', questionRoutes);
 
-setRoutes(app);
-
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
