@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DVA-C02 Testing Application</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>DVA-C02 Testing Application</h1>
+        
+        <!-- Add this container for questions -->
+        <div id="question-container">
+            <!-- Questions will be displayed here -->
+        </div>
+
+        <div class="navigation-buttons">
+            <button onclick="previousQuestion()" class="nav-button">Previous</button>
+            <button onclick="nextQuestion()" class="nav-button">Next</button>
+        </div>
+
+        <button class="submit-button" onclick="submitAnswers()">Submit Answers</button>
+    </div>
+    
+    <!-- Make sure this path is correct -->
+    <script src="app.js"></script>
+</body>
+</html>
