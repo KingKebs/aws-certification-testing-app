@@ -1,9 +1,4 @@
-/* 
-    Navigation component that displays two buttons: Previous and Next.
-    The buttons are disabled when the canGoPrevious and canGoNext props are false, respectively.
-    The onPrevious and onNext props are the functions that are called when the Previous and Next buttons are clicked.
-*/
-
+// src/components/Navigation.tsx
 import React from 'react';
 
 interface NavigationProps {

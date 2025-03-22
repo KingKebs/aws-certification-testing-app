@@ -1,20 +1,23 @@
 /* 
-    This component is responsible for rendering a single question card.
-    It takes the following props:
-    - question: An object containing the question text and options.
-    - currentIndex: The index of the current question.
-    - onAnswerSelect: A function that is called when an answer is selected.
-    - selectedAnswer: The index of the selected answer.
+    QuestionCard component is a functional component that takes in the following props:
+    - question: Question
+    - currentIndex: number
+    - onAnswerSelect: (answerId: string) => void
+    - selectedAnswer?: string
+
+    The component renders the question and a list of options. The user can select an option by clicking on the radio button. The selected option is highlighted in the UI.
+    The component is used in the QuizPage component to display the questions and options to the user.
 */
 
+// src/components/QuestionCard.tsx
 import React from 'react';
 import { Question } from '../types/question';
 
 interface QuestionCardProps {
     question: Question;
     currentIndex: number;
-    onAnswerSelect: (answerId: number) => void;
-    selectedAnswer?: number;
+    onAnswerSelect: (answerId: string) => void;
+    selectedAnswer?: string;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -26,7 +29,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     return (
         <div className="question-card">
             <h3>Question {currentIndex + 1}</h3>
-            <p>{question.questionText}</p>
+            <p>{question.question}</p>
             <div className="options">
                 {question.options.map((option, index) => (
                     <div key={index} className="option">
@@ -34,8 +37,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             type="radio"
                             id={`option-${index}`}
                             name={`question-${question.id}`}
-                            checked={selectedAnswer === index}
-                            onChange={() => onAnswerSelect(index)}
+                            checked={selectedAnswer === option}
+                            onChange={() => onAnswerSelect(option)}
                         />
                         <label htmlFor={`option-${index}`}>{option}</label>
                     </div>
