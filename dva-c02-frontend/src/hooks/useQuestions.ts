@@ -1,48 +1,43 @@
 // src/hooks/useQuestions.ts
 import { useState, useEffect } from 'react';
-import { Question, SubmitAnswer, SubmissionResult } from '../types/question';
+import { Question } from '../types/question';
 
 interface UseQuestionsReturn {
     questions: Question[];
     loading: boolean;
     error: string | null;
     currentQuestionIndex: number;
-    setCurrentQuestionIndex: (index: number) => void;  // This is the important part
-    submitAnswers: (answers: Record<number, string>) => Promise<SubmissionResult | null>;
-    submissionStatus: 'idle' | 'submitting' | 'success' | 'error';
-    submissionError: string | null;
+    setCurrentQuestionIndex: (index: number) => void;
+    submitAnswers: (answers: Record<number, string | string[]>) => Promise<any>;
+    continueToNextBatch: () => void;
+    questionsCompleted: number;
+    totalQuestionsAnswered: number;
+    currentBatchNumber: number;
 }
 
 export const useQuestions = (): UseQuestionsReturn => {
-    const [questions, setQuestions] = useState<Question[]>([]);
+    const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+    const [currentBatch, setCurrentBatch] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-    const [submissionError, setSubmissionError] = useState<string | null>(null);
+    const [currentBatchNumber, setCurrentBatchNumber] = useState(1);
+    const [questionsCompleted, setQuestionsCompleted] = useState(0);
+    const [totalQuestionsAnswered, setTotalQuestionsAnswered] = useState(0);
+
+    const BATCH_SIZE = 65;
 
     useEffect(() => {
         const fetchQuestions = async () => {
             try {
-                setLoading(true);
-                setError(null);
-                
                 const response = await fetch('http://localhost:3001/api/questions');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
                 const data = await response.json();
-
-                if (!Array.isArray(data)) {
-                    throw new Error('Invalid response format');
-                }
-
-                setQuestions(data);
+                setAllQuestions(data);
+                // Get first batch of questions
+                const firstBatch = data.slice(0, BATCH_SIZE);
+                setCurrentBatch(firstBatch);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-                console.error('Error fetching questions:', err);
+                setError(err instanceof Error ? err.message : 'Failed to load questions');
             } finally {
                 setLoading(false);
             }
@@ -51,48 +46,58 @@ export const useQuestions = (): UseQuestionsReturn => {
         fetchQuestions();
     }, []);
 
-    const submitAnswers = async (answers: Record<number, string>): Promise<SubmissionResult | null> => {
+    const continueToNextBatch = () => {
+        const nextBatchStart = currentBatchNumber * BATCH_SIZE;
+        const nextBatch = allQuestions.slice(nextBatchStart, nextBatchStart + BATCH_SIZE);
+        
+        if (nextBatch.length > 0) {
+            setCurrentBatch(nextBatch);
+            setCurrentBatchNumber(prev => prev + 1);
+            setCurrentQuestionIndex(0);
+            setQuestionsCompleted(0);
+        } else {
+            setError('No more questions available');
+        }
+    };
+
+    const submitAnswers = async (answers: Record<number, string | string[]>) => {
         try {
-            setSubmissionStatus('submitting');
-            setSubmissionError(null);
-
-            const formattedAnswers: SubmitAnswer[] = Object.entries(answers).map(([questionId, selectedOption]) => ({
-                questionId: parseInt(questionId),
-                selectedOption
-            }));
-
-            const response = await fetch('http://localhost:3001/api/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ answers: formattedAnswers })
+            // Calculate results for current batch
+            const results = currentBatch.map(question => {
+                const userAnswer = answers[question.id];
+                // You'll need to implement the correct answer checking logic
+                return {
+                    questionId: question.id,
+                    question: question.question,
+                    userAnswer,
+                    // Add correct answer checking here
+                };
             });
 
-            if (!response.ok) {
-                throw new Error(`Submission failed with status: ${response.status}`);
-            }
+            setTotalQuestionsAnswered(prev => prev + BATCH_SIZE);
 
-            const result: SubmissionResult = await response.json();
-            setSubmissionStatus('success');
-            return result;
+            return {
+                batchNumber: currentBatchNumber,
+                questionsAnswered: BATCH_SIZE,
+                totalAnswered: totalQuestionsAnswered + BATCH_SIZE,
+                results
+            };
 
         } catch (err) {
-            setSubmissionStatus('error');
-            setSubmissionError(err instanceof Error ? err.message : 'Failed to submit answers');
-            console.error('Error submitting answers:', err);
-            return null;
+            throw new Error('Failed to process answers');
         }
     };
 
     return {
-        questions,
+        questions: currentBatch,
         loading,
         error,
         currentQuestionIndex,
         setCurrentQuestionIndex,
         submitAnswers,
-        submissionStatus,
-        submissionError
+        continueToNextBatch,
+        questionsCompleted,
+        totalQuestionsAnswered,
+        currentBatchNumber
     };
 };

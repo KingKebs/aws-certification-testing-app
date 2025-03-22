@@ -1,17 +1,8 @@
-// src/App.tsx
 import React, { useState } from 'react';
 import { QuestionCard } from './components/QuestionCard';
-import { Navigation } from './components/Navigation';
-import { SubmitButton } from './components/SubmitButton';
 import { Results } from './components/Results';
 import { useQuestions } from './hooks/useQuestions';
-import { SubmissionResult } from './types/question';
 import './App.css';
-
-// Define interface for answers to handle both single and multiple selections
-interface Answers {
-    [questionId: number]: string | string[];
-}
 
 function App() {
     const {
@@ -21,143 +12,99 @@ function App() {
         currentQuestionIndex,
         setCurrentQuestionIndex,
         submitAnswers,
-        submissionStatus
+        continueToNextBatch,
+        totalQuestionsAnswered,
+        currentBatchNumber
     } = useQuestions();
 
-    // Update state type to handle both single and multiple selections
-    const [answers, setAnswers] = useState<Answers>({});
-    const [results, setResults] = useState<SubmissionResult | null>(null);
+    const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
+    const [currentResults, setCurrentResults] = useState<any>(null);
 
-    if (loading) return <div className="loading">Loading...</div>;
-    if (error) return <div className="error">Error: {error}</div>;
-    if (!questions.length) return <div>No questions available</div>;
-
-    const currentQuestion = questions[currentQuestionIndex];
-
-    // Updated to handle both single and multiple selections
-    const handleAnswerSelect = (option: string | string[]) => {
+    const handleAnswerSelect = (answer: string | string[]) => {
         setAnswers(prev => ({
             ...prev,
-            [currentQuestion.id]: option
+            [questions[currentQuestionIndex].id]: answer
         }));
     };
 
     const handleSubmit = async () => {
-        // Validate all questions are answered with correct number of selections
-        const isValid = questions.every(question => {
-            const answer = answers[question.id];
-            if (question.isMultipleChoice) {
-                // For multiple choice, check if correct number of options are selected
-                return Array.isArray(answer) && answer.length === (question.requiredSelections || 2);
-            }
-            // For single choice, check if an answer exists
-            return !!answer;
-        });
-
-        if (!isValid) {
-            alert('Please ensure all questions are answered with the correct number of selections.');
-            return;
-        }
-
-        const transformedAnswers = Object.fromEntries(
-            Object.entries(answers).map(([key, value]) => [
-                key,
-                Array.isArray(value) ? value.join(',') : value
-            ])
-        );
-        const result = await submitAnswers(transformedAnswers);
-        if (result) {
-            setResults(result);
-        }
+        const results = await submitAnswers(answers);
+        setCurrentResults(results);
     };
 
-    const handleRetry = () => {
+    const handleContinue = () => {
+        setCurrentResults(null);
         setAnswers({});
-        setResults(null);
-        setCurrentQuestionIndex(0);
+        continueToNextBatch();
     };
 
-    const handlePrevious = () => {
-        setCurrentQuestionIndex(currentQuestionIndex - 1);
-    };
+    if (loading) return <div className="loading">Loading questions...</div>;
+    if (error) return <div className="error">{error}</div>;
 
-    const handleNext = () => {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-    };
-
-    // Show results if test is completed
-    if (results) {
-        return <Results results={results} onRetry={handleRetry} />;
+    if (currentResults) {
+        return (
+            <div className="app">
+                <Results results={currentResults} />
+                <div className="navigation">
+                    <button className="continue-button" onClick={handleContinue}>
+                        Continue to Next Set
+                    </button>
+                </div>
+                <div className="progress-info">
+                    <p>Total Questions Answered: {totalQuestionsAnswered}</p>
+                    <p>Current Batch: {currentBatchNumber}</p>
+                </div>
+            </div>
+        );
     }
-
-    // Calculate if current question has correct number of selections
-    const isCurrentQuestionValid = () => {
-        const answer = answers[currentQuestion.id];
-        if (currentQuestion.isMultipleChoice) {
-            return Array.isArray(answer) && 
-                   answer.length === (currentQuestion.requiredSelections || 2);
-        }
-        return !!answer;
-    };
-
-    // Add progress tracking
-    const answeredQuestions = questions.filter(q => {
-        const answer = answers[q.id];
-        return q.isMultipleChoice 
-            ? Array.isArray(answer) && answer.length === (q.requiredSelections || 2)
-            : !!answer;
-    }).length;
 
     return (
         <div className="app">
-            <h1>DVA-C02 Testing Application</h1>
-            
-            {/* Add progress indicator */}
-            <div className="progress-indicator">
-                Question {currentQuestionIndex + 1} of {questions.length}
-                <div className="progress-bar">
-                    <div 
-                        className="progress-fill"
-                        style={{ width: `${(answeredQuestions / questions.length) * 100}%` }}
-                    />
-                </div>
+            <div className="progress-header">
+                <h2>Batch {currentBatchNumber}</h2>
+                <p>Question {currentQuestionIndex + 1} of {questions.length}</p>
+                <p>Total Questions Answered: {Object.keys(answers).length}</p>
             </div>
 
             <QuestionCard
-                question={currentQuestion}
+                question={questions[currentQuestionIndex]}
                 currentIndex={currentQuestionIndex}
+                selectedAnswer={answers[questions[currentQuestionIndex].id]}
                 onAnswerSelect={handleAnswerSelect}
-                selectedAnswer={answers[currentQuestion.id]}
             />
 
-            <Navigation
-                onPrevious={handlePrevious}
-                onNext={handleNext}
-                canGoPrevious={currentQuestionIndex > 0}
-                canGoNext={currentQuestionIndex < questions.length - 1}
-            />
+            <div className="navigation">
+                <button
+                    className="nav-button"
+                    disabled={currentQuestionIndex === 0}
+                    onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
+                >
+                    Previous
+                </button>
 
-            <SubmitButton
-                onSubmit={handleSubmit}
-                disabled={
-                    Object.keys(answers).length !== questions.length || 
-                    submissionStatus === 'submitting' ||
-                    !questions.every(q => {
-                        const answer = answers[q.id];
-                        return q.isMultipleChoice 
-                            ? Array.isArray(answer) && answer.length === (q.requiredSelections || 2)
-                            : !!answer;
-                    })
-                }
-            />
+                {currentQuestionIndex < questions.length - 1 ? (
+                    <button
+                        className="nav-button"
+                        onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)}
+                    >
+                        Next
+                    </button>
+                ) : (
+                    <button
+                        className="nav-button"
+                        onClick={handleSubmit}
+                        disabled={Object.keys(answers).length < questions.length}
+                    >
+                        Submit Answers
+                    </button>
+                )}
+            </div>
 
-            {/* Add answer status indicator */}
-            <div className="answer-status">
-                {isCurrentQuestionValid() 
-                    ? "✓ Question answered" 
-                    : currentQuestion.isMultipleChoice 
-                        ? `Please select ${currentQuestion.requiredSelections || 2} answers`
-                        : "Please select an answer"}
+            <div className="progress-bar">
+                <div 
+                    className="progress-fill"
+                    style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}
+                />
             </div>
         </div>
     );
