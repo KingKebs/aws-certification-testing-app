@@ -6,7 +6,7 @@ Types ( types/question.ts)
 // Defines data structures used throughout the app
 interface Question {
     id: number;
-    questionText: string;
+    question: string;
     options: string[];
     correctAnswer: number;
 }

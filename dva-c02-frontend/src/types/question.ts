@@ -8,8 +8,10 @@ export interface Question {
     id: number;
     question: string;
     options: string[];
+    correctAnswer: string | string[];  // Can be single answer or array of answers
+    isMultipleChoice?: boolean;       // Flag for multiple choice questions
+    requiredSelections?: number;      // Number of required selections for multiple choice
 }
-
 export interface SubmitAnswer {
     questionId: number;
     selectedOption: string;
