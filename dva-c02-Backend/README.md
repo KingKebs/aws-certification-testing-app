@@ -48,7 +48,7 @@ lightweight-testing-app
 
 ## Usage
 
-- Open your browser and navigate to `http://localhost:3000` to access the testing application.
+- Open your browser and navigate to `http://localhost:3001` to access the testing application.
 - Users can view questions and submit their answers through the interface.
 
 ## Contributing

@@ -1,5 +1,5 @@
 export interface Question {
-    questionText: string;
+    question: string;
     options: string[];
-    correctAnswer: string;
+    correctAnswer: string[]; // Now always an array to handle both single and multiple choice
 }
