@@ -1,91 +1,106 @@
-// src/hooks/useQuestions.ts
 import { useState, useEffect } from 'react';
-import { Question } from '../types/question';
+import { Question, SubmissionResult } from '../types/question';
 
-interface UseQuestionsReturn {
-    questions: Question[];
-    loading: boolean;
-    error: string | null;
-    currentQuestionIndex: number;
-    setCurrentQuestionIndex: (index: number) => void;
-    submitAnswers: (answers: Record<number, string | string[]>) => Promise<any>;
-    continueToNextBatch: () => void;
-    questionsCompleted: number;
-    totalQuestionsAnswered: number;
-    currentBatchNumber: number;
-}
-
-export const useQuestions = (): UseQuestionsReturn => {
-    const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+export const useQuestions = () => {
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [currentBatch, setCurrentBatch] = useState<Question[]>([]);
+    const [currentBatchNumber, setCurrentBatchNumber] = useState(1);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [currentBatchNumber, setCurrentBatchNumber] = useState(1);
-    const [questionsCompleted, setQuestionsCompleted] = useState(0);
     const [totalQuestionsAnswered, setTotalQuestionsAnswered] = useState(0);
 
-    const BATCH_SIZE = 65;
-
-    useEffect(() => {
-        const fetchQuestions = async () => {
-            try {
-                const response = await fetch('http://localhost:3001/api/questions');
-                const data = await response.json();
-                setAllQuestions(data);
-                // Get first batch of questions
-                const firstBatch = data.slice(0, BATCH_SIZE);
-                setCurrentBatch(firstBatch);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load questions');
-            } finally {
-                setLoading(false);
+    const BATCH_SIZE = 10;
+    const API_CONFIG = {
+        paths: {
+            questions: 'http://localhost:3001/api/questions',
+            submit: 'http://localhost:3001/api/questions/submit'
+        },
+        headers: {
+            default: {
+                'Content-Type': 'application/json'
             }
-        };
-
-        fetchQuestions();
-    }, []);
-
-    const continueToNextBatch = () => {
-        const nextBatchStart = currentBatchNumber * BATCH_SIZE;
-        const nextBatch = allQuestions.slice(nextBatchStart, nextBatchStart + BATCH_SIZE);
-        
-        if (nextBatch.length > 0) {
-            setCurrentBatch(nextBatch);
-            setCurrentBatchNumber(prev => prev + 1);
-            setCurrentQuestionIndex(0);
-            setQuestionsCompleted(0);
-        } else {
-            setError('No more questions available');
         }
     };
 
-    const submitAnswers = async (answers: Record<number, string | string[]>) => {
+    useEffect(() => {
+        fetchQuestions();
+    }, []);
+
+    const fetchQuestions = async () => {
         try {
-            // Calculate results for current batch
-            const results = currentBatch.map(question => {
-                const userAnswer = answers[question.id];
-                // You'll need to implement the correct answer checking logic
-                return {
-                    questionId: question.id,
-                    question: question.question,
-                    userAnswer,
-                    // Add correct answer checking here
-                };
+            const response = await fetch(API_CONFIG.paths.questions);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const processedQuestions: Question[] = data.map((q: any) => ({
+                id: q.id,
+                question: q.question,
+                options: q.options,
+                isMultipleChoice: q.options.length > 1
+            }));
+
+            setQuestions(processedQuestions);
+            setCurrentBatch(processedQuestions.slice(0, BATCH_SIZE));
+            setLoading(false);
+        } catch (err) {
+            console.error('Error fetching questions:', err);
+            setError(err instanceof Error ? err.message : 'Failed to fetch questions');
+            setLoading(false);
+        }
+    };
+
+    const submitAnswers = async (answers: Record<number, string | string[]>): Promise<SubmissionResult> => {
+        try {
+            const answersArray = Object.entries(answers).map(([questionId, selectedOption]) => ({
+                questionId: parseInt(questionId),
+                selectedOption
+            }));
+
+            const response = await fetch(API_CONFIG.paths.submit, {
+                method: 'POST',
+                headers: API_CONFIG.headers.default,
+                body: JSON.stringify({ answers: answersArray }),
             });
 
-            setTotalQuestionsAnswered(prev => prev + BATCH_SIZE);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-            return {
-                batchNumber: currentBatchNumber,
-                questionsAnswered: BATCH_SIZE,
-                totalAnswered: totalQuestionsAnswered + BATCH_SIZE,
-                results
-            };
-
+            const results: SubmissionResult = await response.json();
+            setTotalQuestionsAnswered(prev => prev + currentBatch.length);
+            return results;
         } catch (err) {
-            throw new Error('Failed to process answers');
+            console.error('Error submitting answers:', err);
+            throw new Error(err instanceof Error ? err.message : 'Failed to submit answers');
         }
+    };
+
+    const continueToNextBatch = () => {
+        const nextBatchStart = currentBatchNumber * BATCH_SIZE;
+        const nextBatch = questions.slice(nextBatchStart, nextBatchStart + BATCH_SIZE);
+
+        if (nextBatch.length === 0) {
+            setError('No more questions available');
+            return;
+        }
+
+        setCurrentBatch(nextBatch);
+        setCurrentBatchNumber(prev => prev + 1);
+        setCurrentQuestionIndex(0);
+    };
+
+    const resetQuiz = () => {
+        setCurrentBatchNumber(1);
+        setCurrentQuestionIndex(0);
+        setTotalQuestionsAnswered(0);
+        setCurrentBatch(questions.slice(0, BATCH_SIZE));
+        setError(null);
+    };
+
+    const hasMoreQuestions = (): boolean => {
+        return currentBatchNumber * BATCH_SIZE < questions.length;
     };
 
     return {
@@ -96,8 +111,10 @@ export const useQuestions = (): UseQuestionsReturn => {
         setCurrentQuestionIndex,
         submitAnswers,
         continueToNextBatch,
-        questionsCompleted,
         totalQuestionsAnswered,
-        currentBatchNumber
+        currentBatchNumber,
+        hasMoreQuestions,
+        resetQuiz,
+        totalQuestions: questions.length
     };
 };

@@ -1,6 +1,6 @@
 DOM Elements:
 
-questionText: Displays the current question text.
+question: Displays the current question text.
 optionsContainer: Contains the options for the current question.
 submitAnswerButton: Button to submit the selected answer.
 resultContainer: Displays the result of the answer check or the final score.

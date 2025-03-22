@@ -9,7 +9,6 @@ const questionController = new QuestionController();
 router.get('/', (req, res) => questionController.getQuestions(req, res));
 router.post('/check', (req, res) => questionController.checkAnswer(req, res));
 router.post('/submit', questionController.submitAnswers.bind(questionController));
-
 // Add a new route to get questions with answers (for admin/testing)
 router.get('/with-answers', (req, res) => questionController.getQuestionsWithAnswers(req, res));
 

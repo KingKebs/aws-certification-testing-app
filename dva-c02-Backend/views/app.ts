@@ -7,7 +7,7 @@ declare global {
 
 interface Question {
     id: number;
-    questionText: string;
+    question: string;
     options: string[];
     correctAnswer: number;
 }
@@ -45,7 +45,7 @@ function displayCurrentQuestion() {
     const questionHtml = `
         <div class="question">
             <h3>Question ${currentQuestionIndex + 1}</h3>
-            <p>${question.questionText}</p>
+            <p>${question.question}</p>
             <div class="options">
                 ${question.options.map((option, index) => `
                     <div class="option">
