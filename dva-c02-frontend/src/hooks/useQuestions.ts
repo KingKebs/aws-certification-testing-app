@@ -10,7 +10,7 @@ export const useQuestions = () => {
     const [error, setError] = useState<string | null>(null);
     const [totalQuestionsAnswered, setTotalQuestionsAnswered] = useState(0);
 
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 10;
     const API_CONFIG = {
         paths: {
             questions: 'http://localhost:3001/api/questions',
@@ -43,8 +43,19 @@ export const useQuestions = () => {
             isMultipleChoice: q.options.length > 1
         }));
 
-            setQuestions(processedQuestions);
-            setCurrentBatch(processedQuestions.slice(0, BATCH_SIZE));
+            // Shuffle using Fisher-Yates algorithm
+            const shuffleQuestions = (array: Question[]) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+            };
+
+        const shuffledQuestions = shuffleQuestions([...processedQuestions]);
+
+            setQuestions(shuffledQuestions);
+            setCurrentBatch(shuffledQuestions.slice(0, BATCH_SIZE));
             setLoading(false);
         } catch (err) {
             console.error('Error fetching questions:', err);
