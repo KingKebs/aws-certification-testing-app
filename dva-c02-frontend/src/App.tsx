@@ -2,7 +2,6 @@
     App component is the main component that renders the QuestionCard component and Results component.
     It also handles the navigation between questions, submitting answers, and displaying the results.
 */
-// src/App.tsx
 import React, { useState } from 'react';
 import { QuestionCard } from './components/QuestionCard';
 import { Results } from './components/Results';
@@ -24,18 +23,31 @@ function App() {
 
     const [answers, setAnswers] = useState<Record<number, string | string[]>>({});
     const [currentResults, setCurrentResults] = useState<any>(null);
+    
     const handleAnswerSelect = (answer: string | string[]) => {
-        console.log("Current answers:", answers); // This logs the answers to the console
+        const currentQuestion = questions[currentQuestionIndex];
+        if (!currentQuestion) return;
+
         setAnswers(prev => ({
             ...prev,
-            [questions[currentQuestionIndex].id]: answer
+            [currentQuestion.id]: Array.isArray(answer) ? answer : [answer]
         }));
     };
 
     const handleSubmit = async () => {
-        console.log("Submitting answers...", answers);
-        const results = await submitAnswers(answers);
-        setCurrentResults(results);
+        try {
+            const formattedAnswers: Record<number, string[]> = {};
+            Object.entries(answers).forEach(([questionId, options]) => {
+                formattedAnswers[Number(questionId)] = Array.isArray(options) ? options : [options];
+            });
+
+            console.log("Submitting answers...", formattedAnswers);
+            const result = await submitAnswers(formattedAnswers);
+            console.log("Results:", result);
+            setCurrentResults(result);
+        } catch (error) {
+            console.error('Error submitting answers:', error);
+        }
     };
 
     const handleContinue = () => {
@@ -47,7 +59,6 @@ function App() {
     if (loading) return <div className="loading">Loading questions...</div>;
     if (error) return <div className="error">{error}</div>;
 
-    // Show results if batch is completed
     if (currentResults) {
         return (
             <div className="app">
@@ -103,13 +114,12 @@ function App() {
                     <button
                         className="nav-button"
                         onClick={handleSubmit}
-                        // disabled={Object.keys(answers).length < 9}
                     >
                         Submit Answers
                     </button>
                 )}
             </div>
-             <div className="progress-bar">
+            <div className="progress-bar">
                 <div 
                     className="progress-fill"
                     style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}

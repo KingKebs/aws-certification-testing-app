@@ -1,4 +1,3 @@
-// dva-c02-Backend/src/controllers/questionController.ts
 import { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -29,8 +28,19 @@ class QuestionController {
     constructor() {
         try {
             const questionsPath = path.join(__dirname, '../data/questions.json');
+
             const fileContent = fs.readFileSync(questionsPath, 'utf-8');
-            this.questions = JSON.parse(fileContent);
+            const parsedQuestions = JSON.parse(fileContent);
+
+            // Add IDs to questions if they don't have them
+            this.questions = parsedQuestions.map((q: any, index: number) => ({
+                ...q,
+                id: index + 1 // Ensure each question has an ID
+            }));
+
+            // console.log('Loaded questions count:', this.questions.length);
+            // console.log('First few questions:', this.questions.slice(0, 2));
+
         } catch (error) {
             console.error('Error loading questions:', error);
             this.questions = [];
@@ -84,20 +94,57 @@ class QuestionController {
 
     async submitAnswers(req: Request, res: Response) {
         try {
-            console.log("Received answers:", req.body);
+            console.log("Raw request body line 87 backend useQuestions:87:", req.body);
             const { answers } = req.body;
 
-            if (!answers || !Array.isArray(answers)) {
-                return res.status(400).json({ error: "Invalid answers format" });
+            // Debug information
+            console.log('Total questions loaded:', this.questions.length);
+            console.log('First few question IDs:', this.questions.slice(0, 5).map(q => q.id));
+            console.log('Received answer IDs:', answers.map((a: { questionId: any; }) => a.questionId));
+
+            if (!this.questions || this.questions.length === 0) {
+                throw new Error('No questions loaded in the controller');
             }
 
-            // Process the answers (this is just a placeholder, replace with actual logic)
-            const results = answers.map(answer => ({
-                questionId: answer.questionId,
-                correct: true // Assume all answers are correct for this example
-            }));
+            // Validate each answer
+            for (const answer of answers) {
+                if (!answer.questionId || answer.selectedOption === undefined) {
+                    console.log("Invalid answer format:", answer);
+                    res.status(400).json({ 
+                        error: 'Invalid answer format',
+                        invalidAnswer: answer 
+                    });
+                    return;
+                }
+            }
 
-            res.status(200).json({ message: "Answers submitted successfully", results });
+            const results = answers.map((answer: SubmitAnswer) => {
+                const question = this.questions.find(q => q.id === answer.questionId);
+                
+                if (!question) {
+                    console.log('Available question IDs:', this.questions.map(q => q.id));
+                    throw new Error(`Question with ID ${answer.questionId} not found`);
+                }
+
+                const isCorrect = Array.isArray(answer.selectedOption)
+                    ? this.arraysEqual(answer.selectedOption.sort(), question.correct_answers.sort())
+                    : question.correct_answers.includes(answer.selectedOption);
+
+                return {
+                    questionId: answer.questionId,
+                    correct: isCorrect,
+                    userAnswer: answer.selectedOption,
+                    correctAnswer: question.correct_answers,
+                    question: question.question
+                };
+            });
+
+            res.json({
+                results,
+                score: results.filter((r: SubmissionResult) => r.correct).length,
+                total: results.length
+            });
+            
         } catch (error) {
             console.error("Error submitting answers:", error);
             res.status(500).json({ error: "Internal Server Error" });

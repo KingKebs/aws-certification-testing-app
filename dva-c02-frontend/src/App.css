@@ -233,8 +233,22 @@ h1 {
   margin: 0.5rem 0;
   border-radius: 4px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.result-item.correct {
+  border-left: 5px solid green;
+}
+
+.result-item.incorrect {
+  border-left: 5px solid red;
+}
+
+.result-item p {
+  margin: 5px 0;
+  font-size: 16px;
 }
 
 .result-item.correct {

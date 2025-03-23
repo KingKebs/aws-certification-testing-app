@@ -10,7 +10,7 @@ export const useQuestions = () => {
     const [error, setError] = useState<string | null>(null);
     const [totalQuestionsAnswered, setTotalQuestionsAnswered] = useState(0);
 
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 5;
     const API_CONFIG = {
         paths: {
             questions: 'http://localhost:3001/api/questions',
@@ -34,12 +34,14 @@ export const useQuestions = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            const processedQuestions: Question[] = data.map((q: any) => ({
-                id: q.id,
-                question: q.question,
-                options: q.options,
-                isMultipleChoice: q.options.length > 1
-            }));
+            
+             // Add IDs to questions when processing them
+            const processedQuestions: Question[] = data.map((q: any, index: number) => ({
+            id: index + 1, // Add sequential IDs starting from 1
+            question: q.question,
+            options: q.options,
+            isMultipleChoice: q.options.length > 1
+        }));
 
             setQuestions(processedQuestions);
             setCurrentBatch(processedQuestions.slice(0, BATCH_SIZE));
@@ -53,29 +55,40 @@ export const useQuestions = () => {
 
     const submitAnswers = async (answers: Record<number, string | string[]>): Promise<SubmissionResult> => {
         try {
-            const answersArray = Object.entries(answers).map(([questionId, selectedOption]) => ({
-                questionId: parseInt(questionId),
-                selectedOption
-            }));
-
+            console.log('Sending to server:', {
+                answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
+                    questionId: parseInt(questionId),
+                    selectedOption
+                }))
+            });
+    
             const response = await fetch(API_CONFIG.paths.submit, {
                 method: 'POST',
                 headers: API_CONFIG.headers.default,
-                body: JSON.stringify({ answers: answersArray }),
+                body: JSON.stringify({
+                    answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
+                        questionId: parseInt(questionId),
+                        selectedOption
+                    }))
+                })
             });
-
+    
+            // Read the response body ONCE as JSON
+            const responseData = await response.json();
+    
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.error('Server error details:', responseData);
+                throw new Error(`HTTP error! status: ${response.status}, details: ${JSON.stringify(responseData)}`);
             }
-
-            const results: SubmissionResult = await response.json();
-            setTotalQuestionsAnswered(prev => prev + currentBatch.length);
-            return results;
+    
+            console.log('Submission results:', responseData);
+            return responseData;
         } catch (err) {
             console.error('Error submitting answers:', err);
             throw new Error(err instanceof Error ? err.message : 'Failed to submit answers');
         }
     };
+    
 
     const continueToNextBatch = () => {
         const nextBatchStart = currentBatchNumber * BATCH_SIZE;
