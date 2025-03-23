@@ -1,5 +1,6 @@
 import React from 'react';
 import { SubmissionResult } from '../types/question';
+import './Results.css';
 
 interface ResultsProps {
     results: SubmissionResult;
@@ -7,27 +8,44 @@ interface ResultsProps {
 
 export const Results: React.FC<ResultsProps> = ({ results }) => {
     return (
-        <div className="results">
-            <h2>Results</h2>
+        <div className="results-container">
+            <h2>Quiz Results</h2>
             <div className="score-summary">
-                <p>Score: {results.score} out of {results.totalQuestions}</p>
-                <p>Percentage: {results.percentageScore !== undefined ? results.percentageScore.toFixed(2) : 'N/A'}%</p>
-                <p className={results.passingScore ? "passing" : "failing"}>
-                    {results.passingScore ? "PASS" : "FAIL"}
-                </p>
+                <h3>Score: {results.score} out of {results.total}</h3>
+                <p>Percentage: {((results.score / results.total) * 100).toFixed(1)}%</p>
             </div>
 
-            <div className="results-details">
-                {results.results.map((result) => (
-                    <div 
-                        key={result.questionId} 
-                        className={`result-item ${result.correct ? 'correct' : 'incorrect'}`}
-                    >
-                        <p><strong>Question:</strong> {result.question}</p>
-                        <p><strong>Your Answer:</strong> {Array.isArray(result.userAnswer) ? 
-                            result.userAnswer.join(', ') : result.userAnswer}</p>
-                        <p><strong>Correct Answer:</strong> {Array.isArray(result.correctAnswer) ? 
-                            result.correctAnswer.join(', ') : result.correctAnswer}</p>
+            <div className="questions-review">
+                {results.results.map((result, index) => (
+                    <div key={result.questionId} className={`question-result ${result.correct ? 'correct' : 'incorrect'}`}>
+                        <h4>Question {index + 1}</h4>
+                        <p>{result.question}</p>
+                        
+                        <div className="answer-comparison">
+                            <div className="your-answer">
+                                <strong>Your Answer:</strong>
+                                <ul>
+                                    {Array.isArray(result.userAnswer) 
+                                        ? result.userAnswer.map((answer, i) => (
+                                            <li key={i}>{answer}</li>
+                                        ))
+                                        : <li>{result.userAnswer}</li>
+                                    }
+                                </ul>
+                            </div>
+                            
+                            <div className="correct-answer">
+                                <strong>Correct Answer:</strong>
+                                <ul>
+                                    {Array.isArray(result.correctAnswer) 
+                                        ? result.correctAnswer.map((answer, i) => (
+                                            <li key={i}>{answer}</li>
+                                        ))
+                                        : <li>{result.correctAnswer}</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 ))}
             </div>

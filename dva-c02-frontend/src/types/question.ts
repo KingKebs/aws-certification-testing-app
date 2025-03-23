@@ -1,7 +1,4 @@
-/*
-    * This file contains the types for the questions and submission results
-    * that are used in the application.
-    */
+// src/types/question.ts
 export interface Question {
     id: number;
     question: string;
@@ -9,16 +6,16 @@ export interface Question {
     isMultipleChoice?: boolean;
 }
 
+export interface QuestionResult {
+    questionId: number;
+    correct: boolean;
+    userAnswer: string[];
+    correctAnswer: string[];
+    question: string;
+}
+
 export interface SubmissionResult {
+    results: QuestionResult[];
     score: number;
-    totalQuestions: number;
-    percentageScore: number;
-    passingScore: boolean;
-    results: {
-        questionId: number;
-        correct: boolean;
-        userAnswer: string | string[];
-        correctAnswer: string[];
-        question: string;
-    }[];
+    total: number;  // Added this to match the API response
 }

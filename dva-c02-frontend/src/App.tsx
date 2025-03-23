@@ -73,6 +73,7 @@ function App() {
                 </div>
                 <div className="progress-info">
                     <p>Total Questions Answered: {totalQuestionsAnswered}</p>
+                    <p>Score: {currentResults.score} out of {currentResults.total}</p>
                     <p>Current Batch: {currentBatchNumber}</p>
                 </div>
             </div>
